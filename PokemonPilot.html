@@ -373,7 +373,7 @@
                         <p class="card-desc">${escapeHtml(c.description||'')}</p>
                     </div>
                     <div class="card-footer">
-                        <div class="price">$${Number(c.price||0).toFixed(2)}</div>
+                        <div class="price">${new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(Number(c.price || 0))}</div>
                         <div class="controls">
                             <button class="small-btn" data-edit="${idx}">Edit</button>
                             <button class="small-btn" data-delete="${idx}">Delete</button>
