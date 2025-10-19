@@ -42,6 +42,18 @@
                 max-width: calc(var(--max-width) + 40px);
                 margin: 0 auto;
                 min-height:0; /* allow children to use overflow */
+                /* Responsive layout adjustments */
+                @media (max-width: 880px) {
+                    /* Mobile view */
+                    display: block;
+                    height: auto;
+                    overflow: visible;
+                }
+                @media (min-width: 881px) {
+                    /* Desktop view */
+                    height: calc(100vh - 100px);
+                    overflow: auto;
+                }
             }
             /* allow left panel to scroll if form is long */
             .panel{
