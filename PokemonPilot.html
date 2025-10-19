@@ -1,307 +1,609 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simple Product Uploader</title>
-  <style>
-    :root {
-        --bg:#0f1724;
-        --card:#0b1220;
-        --muted:#9aa7bd;
-        --accent:#06f;
-        --glass: rgba(255,255,255,0.03);
-        --radius:12px;
-        --gap:14px;
-        --max-width:1100px;
-        font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    }
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Card Tracker — Post Cards with Images & Price</title>
+    <style>
+        :root{
+            --bg:#0f1724; --card:#0b1220; --muted:#9aa7bd; --accent:#06f; --glass: rgba(255,255,255,0.03);
+            --radius:12px; --gap:14px; --max-width:1100px;
+            font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+        }
+        html,body{height:100%; margin:0; background:linear-gradient(180deg,#071026 0%, #071429 100%); color:#e6eef8;}
+        .wrap{max-width:var(--max-width); margin:28px auto; padding:20px; box-sizing:border-box;}
+        header{display:flex; gap:12px; align-items:center; margin-bottom:18px;}
+        header h1{font-size:20px; margin:0; letter-spacing: -0.2px;}
+        header p{margin:0; color:var(--muted); font-size:13px;}
+        .layout{display:grid; grid-template-columns: 360px 1fr; gap:var(--gap);}
+        /* single column on narrow screens */
+        @media (max-width:880px){ .layout{grid-template-columns:1fr;}}
 
-    html, body {
-        height: 100%;
-        margin: 0;
-        background: linear-gradient(180deg,#071026 0%, #071429 100%);
-        color: #e6eef8;
-    }
+        /* desktop: make app fit viewport and allow independent scrolling of columns */
+        @media (min-width:881px){
+            .wrap{
+                /* use full viewport height so header + layout fit the screen */
+                max-width:var(--max-width);
+                margin:28px auto;
+                padding:20px;
+                box-sizing:border-box;
+                display:flex;
+                flex-direction:column;
+                height:calc(100vh - 56px); /* 56px is approx. top/bottom margin/header; still adaptive */
+                min-height:0;
+            }
 
-    .wrap {
-        max-width: var(--max-width);
-        margin: 28px auto;
-        padding: 20px;
-        box-sizing: border-box;
-    }
+            .layout{
+                /* fill remaining space under the header */
+                flex:1;
+                display:grid;
+                gap:var(--gap);
+                /* desktop two-column layout: left panel fixed, right column flexible */
+                grid-template-columns: 360px minmax(560px, 1fr);
+                max-width: calc(var(--max-width) + 40px);
+                margin: 0 auto;
+                min-height:0; /* allow children to use overflow */
+                height: calc(100vh - 100px); /* desktop gallery height */
+                overflow: auto;
+            }
 
-    /* Header */
-    header {
-        display: flex;
-        gap: 12px;
-        align-items: center;
-        margin-bottom: 18px;
-    }
-    header h1 {
-        font-size: 20px;
-        margin: 0;
-        letter-spacing: -0.2px;
-    }
-    header p {
-        margin: 0;
-        color: var(--muted);
-        font-size: 13px;
-    }
+            /* allow left panel to scroll if form is long (desktop override) */
+            .panel{
+                overflow:auto;
+                max-height:100%;
+                min-height:0;
+                position:relative;
+            }
 
-    /* Base layout */
-    .layout {
-        display: grid;
-        grid-template-columns: 360px 1fr;
-        gap: var(--gap);
-    }
+            /* make gallery column scrollable independently */
+            #gallery{
+                overflow:auto;
+                min-height:0;
+            }
 
-    /* ============ Desktop layout overrides ============ */
-    body.is-desktop .wrap {
-        display: flex;
-        flex-direction: column;
-        height: calc(100vh - 56px);
-        min-height: 0;
-    }
-
-    body.is-desktop .layout {
-        display: grid;
-        grid-template-columns: 360px minmax(560px, 1fr);
-        gap: var(--gap);
-        max-width: calc(var(--max-width) + 40px);
-        margin: 0 auto;
-        min-height: 0;
-        height: calc(100vh - 100px);
-        overflow: hidden;
-    }
-
-    body.is-desktop #formPanel {
-        overflow: auto;
-        max-height: 100%;
-        min-height: 0;
-        position: relative;
-    }
-
-    body.is-desktop #gallery {
-        overflow: auto;
-        min-height: 0;
-    }
-
-    /* ============ Mobile layout overrides ============ */
-    body.is-mobile .layout {
-        display: block;
-        height: auto;
-        overflow: visible;
-    }
-
-    body.is-mobile #formPanel {
-        position: relative;
-        overflow: visible;
-        height: auto;
-    }
-
-    body.is-mobile #gallery {
-        overflow: visible;
-    }
-
-    body.is-mobile .gallery {
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    }
-
-    /* Form panel */
-    .panel {
-        background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-        padding: 16px;
-        border-radius: var(--radius);
-        box-shadow: 0 6px 18px rgba(2,6,23,0.6);
-    }
-    label {
-        display: block;
-        font-size: 13px;
-        color: var(--muted);
-        margin-bottom: 6px;
-    }
-    input[type="text"], textarea, input[type="number"], select {
-        width: 100%;
-        padding: 10px 12px;
-        border-radius: 10px;
-        border: 1px solid rgba(255,255,255,0.04);
-        background: var(--glass);
-        color: inherit;
-        box-sizing: border-box;
-        font-size: 14px;
-    }
-    textarea { min-height: 90px; resize: vertical; }
-    .form-row { margin-bottom: 12px; }
-    .row { display: flex; gap: 10px; align-items: center; }
-    .price-field { flex: 1; }
-
-    .btn {
-        background: linear-gradient(90deg,var(--accent), #3aa7ff);
-        color:#001;
-        border:none;
-        padding:10px 14px;
-        border-radius:10px;
-        cursor:pointer;
-        font-weight:600;
-        box-shadow: 0 6px 18px rgba(6,120,255,0.12);
-    }
-    .btn.ghost {
-        background: transparent;
-        color: var(--muted);
-        border: 1px solid rgba(255,255,255,0.04);
-    }
-
-    /* Image uploader */
-    .uploader {
-        margin-top: 6px;
-        padding: 10px;
-        border-radius: 10px;
-        border: 1px dashed rgba(255,255,255,0.04);
-        background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
-        text-align: center;
-        color: var(--muted);
-        font-size: 13px;
-    }
-    .uploader.dragging {
-        border-color: rgba(255,255,255,0.12);
-        background: rgba(255,255,255,0.02);
-    }
-    .thumbs {
-        display: flex;
-        gap: 8px;
-        margin-top: 10px;
-        flex-wrap: wrap;
-    }
-    .thumb {
-        width: 72px;
-        height: 72px;
-        border-radius: 8px;
-        overflow: hidden;
-        background: #071427;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        border: 1px solid rgba(255,255,255,0.02);
-    }
-    .thumb img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-    }
-    .thumb button {
-        position: absolute;
-        top: 4px;
-        right: 4px;
-        background: rgba(0,0,0,0.5);
-        border: none;
-        color: #fff;
-        border-radius: 6px;
-        width: 22px;
-        height: 22px;
-        cursor: pointer;
-        font-size: 12px;
-    }
-
-    /* Gallery */
-    .gallery {
-        display: grid;
-        gap: var(--gap);
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        align-items: start;
-    }
-    .card {
-        background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 8px 28px rgba(2,6,23,0.6);
-        display: flex;
-        flex-direction: column;
-    }
-    .card-media {
-        height: 160px;
-        background: #071427;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-    }
-    .card-media img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-    }
-    .card-body { padding: 12px; }
-    .card-title { font-weight: 700; font-size: 15px; margin: 0 0 6px 0; }
-    .card-desc { font-size: 13px; color: var(--muted); margin: 0 0 10px 0; min-height: 36px; }
-    .card-footer { display: flex; justify-content: space-between; align-items: center; padding: 0 12px 12px 12px; }
-    .price { font-weight: 800; color: #fff; }
-    .controls { display: flex; gap: 8px; }
-    .small-btn {
-        background: transparent;
-        border: 1px solid rgba(255,255,255,0.04);
-        color: var(--muted);
-        padding: 6px 8px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 13px;
-    }
-    .empty {
-        padding: 40px;
-        text-align: center;
-        color: var(--muted);
-        border-radius: 12px;
-        background: transparent;
-    }
-    .hint {
-        font-size: 12px;
-        color: var(--muted);
-        margin-top: 6px;
-    }
-    footer {
-        margin-top: 18px;
-        color: var(--muted);
-        font-size: 13px;
-    }
-  </style>
+            /* ensure empty state doesn't force extra height */
+            .empty{margin:0;}
+        }
+        /* form panel */
+        .panel{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); padding:16px; border-radius:var(--radius); box-shadow: 0 6px 18px rgba(2,6,23,0.6); }
+        label{display:block; font-size:13px; color:var(--muted); margin-bottom:6px;}
+        input[type="text"], textarea, input[type="number"]{
+            width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background:var(--glass); color:inherit;
+            box-sizing:border-box; font-size:14px;
+        }
+        textarea{min-height:90px; resize:vertical;}
+        .form-row{margin-bottom:12px;}
+        .row{display:flex; gap:10px; align-items:center;}
+        .price-field{flex:1;}
+        .btn{
+            background: linear-gradient(90deg,var(--accent), #3aa7ff);
+            color:#001; border:none; padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:600;
+            box-shadow: 0 6px 18px rgba(6,120,255,0.12);
+        }
+        .btn.ghost{background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.04);}
+        .uploader{
+            margin-top:6px; padding:10px; border-radius:10px; border:1px dashed rgba(255,255,255,0.04);
+            background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent); text-align:center; color:var(--muted);
+            font-size:13px;
+        }
+        .uploader.dragging{border-color:rgba(255,255,255,0.12); background:rgba(255,255,255,0.02);}
+        .thumbs{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;}
+        .thumb{width:72px; height:72px; border-radius:8px; overflow:hidden; background:#071427; display:flex; align-items:center; justify-content:center; position:relative; border:1px solid rgba(255,255,255,0.02);}
+        .thumb img{width:100%; height:100%; object-fit:cover; display:block;}
+        .thumb button{position:absolute; top:4px; right:4px; background:rgba(0,0,0,0.5); border:none; color:#fff; border-radius:6px; width:22px; height:22px; cursor:pointer; font-size:12px;}
+        /* gallery */
+        .gallery{display:grid; gap:var(--gap); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); align-items:start;}
+        .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:12px; overflow:hidden; box-shadow: 0 8px 28px rgba(2,6,23,0.6); display:flex; flex-direction:column;}
+        .card-media{height:160px; background:#071427; display:flex; align-items:center; justify-content:center; overflow:hidden;}
+        .card-media img{width:100%; height:100%; object-fit:cover; display:block;}
+        .card-body{padding:12px;}
+        .card-title{font-weight:700; font-size:15px; margin:0 0 6px 0;}
+        .card-desc{font-size:13px; color:var(--muted); margin:0 0 10px 0; min-height:36px;}
+        .card-footer{display:flex; justify-content:space-between; align-items:center; padding:0 12px 12px 12px;}
+        .price{font-weight:800; color:#fff;}
+        .controls{display:flex; gap:8px;}
+        .small-btn{background:transparent; border:1px solid rgba(255,255,255,0.04); color:var(--muted); padding:6px 8px; border-radius:8px; cursor:pointer; font-size:13px;}
+        .empty{padding:40px; text-align:center; color:var(--muted); border-radius:12px; background:transparent;}
+        .hint{font-size:12px; color:var(--muted); margin-top:6px;}
+        footer{margin-top:18px; color:var(--muted); font-size:13px;}
+    </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <h1>Simple Product Uploader</h1>
-      <p>Add and manage products easily</p>
-    </header>
-    <div class="layout">
-      <div id="formPanel" class="panel">
-        <!-- Your form content goes here -->
-      </div>
-      <div id="gallery" class="gallery">
-        <!-- Your gallery content goes here -->
-      </div>
+    <div class="wrap">
+        <header>
+            <div style="width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#00214a,#003c6a);display:flex;align-items:center;justify-content:center;font-weight:700">SQ</div>
+            <div>
+                <h1>Card Tracker</h1>
+                <p>Post your cards with image and price. Works on mobile & desktop. Data saved locally.</p>
+            </div>
+        </header>
+
+        <div class="layout">
+            <!-- Form panel -->
+            <div class="panel" id="formPanel" aria-labelledby="post-card">
+                <h2 style="margin:0 0 8px 0;">Post a Card</h2>
+
+                <div class="form-row">
+                    <label for="title">Title</label>
+                    <input id="title" type="text" placeholder="Name (e.g. Pikachu)" />
+                </div>
+
+                <div class="form-row">
+                    <label for="desc">Card Set</label>
+                    <select id="desc" style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background:var(--glass); color:inherit; font-size:14px;">
+                        <option value="">Select a set...</option>
+                        <optgroup label="Base Sets">
+                            <option value="Base Set">Base Set</option>
+                            <option value="Jungle">Jungle</option>
+                            <option value="Fossil">Fossil</option>
+                            <option value="Base Set 2">Base Set 2</option>
+                            <option value="Team Rocket">Team Rocket</option>
+                        </optgroup>
+                        <optgroup label="Gym & Neo Series">
+                            <option value="Gym Heroes">Gym Heroes</option>
+                            <option value="Gym Challenge">Gym Challenge</option>
+                            <option value="Neo Genesis">Neo Genesis</option>
+                            <option value="Neo Discovery">Neo Discovery</option>
+                            <option value="Neo Revelation">Neo Revelation</option>
+                            <option value="Neo Destiny">Neo Destiny</option>
+                            <option value="Southern Islands">Southern Islands</option>
+                        </optgroup>
+                        <optgroup label="e-Card Series">
+                            <option value="Legendary Collection">Legendary Collection</option>
+                            <option value="Expedition Base Set">Expedition Base Set</option>
+                            <option value="Aquapolis">Aquapolis</option>
+                            <option value="Skyridge">Skyridge</option>
+                        </optgroup>
+                        <optgroup label="EX Series"></optgroup>
+                            <option value="EX Ruby & Sapphire">EX Ruby & Sapphire</option>
+                            <option value="EX Sandstorm">EX Sandstorm</option>
+                            <option value="EX Dragon">EX Dragon</option>
+                            <option value="EX Team Magma vs Team Aqua">EX Team Magma vs Team Aqua</option>
+                            <option value="EX Hidden Legends">EX Hidden Legends</option>
+                            <option value="EX FireRed & LeafGreen">EX FireRed & LeafGreen</option>
+                            <option value="EX Team Rocket Returns">EX Team Rocket Returns</option>
+                            <option value="EX Deoxys">EX Deoxys</option>
+                            <option value="EX Emerald">EX Emerald</option>
+                            <option value="EX Unseen Forces">EX Unseen Forces</option>
+                            <option value="EX Delta Species">EX Delta Species</option>
+                            <option value="EX Legend Maker">EX Legend Maker</option>
+                            <option value="EX Holon Phantoms">EX Holon Phantoms</option>
+                            <option value="EX Crystal Guardians">EX Crystal Guardians</option>
+                            <option value="EX Dragon Frontiers">EX Dragon Frontiers</option>
+                            <option value="EX Power Keepers">EX Power Keepers</option>
+                        </optgroup>
+                        <optgroup label="Diamond & Pearl Series"></optgroup>
+                            <option value="Diamond & Pearl">Diamond & Pearl</option>
+                            <option value="Mysterious Treasures">Mysterious Treasures</option>
+                            <option value="Secret Wonders">Secret Wonders</option>
+                            <option value="Great Encounters">Great Encounters</option>
+                            <option value="Majestic Dawn">Majestic Dawn</option>
+                            <option value="Legends Awakened">Legends Awakened</option>
+                            <option value="Stormfront">Stormfront</option>
+                        </optgroup>
+                        <optgroup label="Platinum Series">
+                            <option value="Platinum">Platinum</option>
+                            <option value="Rising Rivals">Rising Rivals</option>
+                            <option value="Supreme Victors">Supreme Victors</option>
+                            <option value="Arceus">Arceus</option>
+                        </optgroup>
+                        <optgroup label="HeartGold & SoulSilver Series"></optgroup>
+                            <option value="HeartGold & SoulSilver">HeartGold & SoulSilver</option>
+                            <option value="HS—Unleashed">HS—Unleashed</option>
+                            <option value="HS—Undaunted">HS—Undaunted</option>
+                            <option value="HS—Triumphant">HS—Triumphant</option>
+                            <option value="Call of Legends">Call of Legends</option>
+                        </optgroup>
+                        <optgroup label="Black & White Series">
+                            <option value="Black & White">Black & White</option>
+                            <option value="Emerging Powers">Emerging Powers</option>
+                            <option value="Noble Victories">Noble Victories</option>
+                            <option value="Next Destinies">Next Destinies</option>
+                            <option value="Dark Explorers">Dark Explorers</option>
+                            <option value="Dragons Exalted">Dragons Exalted</option>
+                            <option value="Boundaries Crossed">Boundaries Crossed</option>
+                            <option value="Plasma Storm">Plasma Storm</option>
+                            <option value="Plasma Freeze">Plasma Freeze</option>
+                            <option value="Plasma Blast">Plasma Blast</option>
+                            <option value="Legendary Treasures">Legendary Treasures</option>
+                        </optgroup>
+                        <optgroup label="XY Series">
+                            <option value="XY">XY</option>
+                            <option value="Flashfire">Flashfire</option>
+                            <option value="Furious Fists">Furious Fists</option>
+                            <option value="Phantom Forces">Phantom Forces</option>
+                            <option value="Primal Clash">Primal Clash</option>
+                            <option value="Roaring Skies">Roaring Skies</option>
+                            <option value="Ancient Origins">Ancient Origins</option>
+                            <option value="BREAKthrough">BREAKthrough</option>
+                            <option value="BREAKpoint">BREAKpoint</option>
+                            <option value="Fates Collide">Fates Collide</option>
+                            <option value="Steam Siege">Steam Siege</option>
+                            <option value="Evolutions">Evolutions</option>
+                        </optgroup>
+                        <optgroup label="Sun & Moon Series">
+                            <option value="Sun & Moon">Sun & Moon</option>
+                            <option value="Guardians Rising">Guardians Rising</option>
+                            <option value="Burning Shadows">Burning Shadows</option>
+                            <option value="Crimson Invasion">Crimson Invasion</option>
+                            <option value="Ultra Prism">Ultra Prism</option>
+                            <option value="Forbidden Light">Forbidden Light</option>
+                            <option value="Celestial Storm">Celestial Storm</option>
+                            <option value="Lost Thunder">Lost Thunder</option>
+                            <option value="Team Up">Team Up</option>
+                            <option value="Unbroken Bonds">Unbroken Bonds</option>
+                            <option value="Unified Minds">Unified Minds</option>
+                            <option value="Hidden Fates">Hidden Fates</option>
+                            <option value="Cosmic Eclipse">Cosmic Eclipse</option>
+                        </optgroup>
+                        <optgroup label="Sword & Shield Series">
+                            <option value="Sword & Shield">Sword & Shield</option>
+                            <option value="Rebel Clash">Rebel Clash</option>
+                            <option value="Darkness Ablaze">Darkness Ablaze</option>
+                            <option value="Champion's Path">Champion's Path</option>
+                            <option value="Vivid Voltage">Vivid Voltage</option>
+                            <option value="Shining Fates">Shining Fates</option>
+                            <option value="Battle Styles">Battle Styles</option>
+                            <option value="Chilling Reign">Chilling Reign</option>
+                            <option value="Evolving Skies">Evolving Skies</option>
+                            <option value="Celebrations">Celebrations</option>
+                            <option value="Fusion Strike">Fusion Strike</option>
+                            <option value="Brilliant Stars">Brilliant Stars</option>
+                            <option value="Astral Radiance">Astral Radiance</option>
+                            <option value="Pokémon GO">Pokémon GO</option>
+                            <option value="Lost Origin">Lost Origin</option>
+                            <option value="Silver Tempest">Silver Tempest</option>
+                            <option value="Crown Zenith">Crown Zenith</option>
+                        </optgroup>
+                        <optgroup label="Scarlet & Violet Series">
+                            <option value="Scarlet & Violet">Scarlet & Violet</option>
+                            <option value="Paldea Evolved">Paldea Evolved</option>
+                            <option value="Obsidian Flames">Obsidian Flames</option>
+                            <option value="151">151</option>
+                            <option value="Paradox Rift">Paradox Rift</option>
+                            <option value="Paldean Fates">Paldean Fates</option>
+                            <option value="Temporal Forces">Temporal Forces</option>
+                        </optgroup>
+                    </select>
+
+                <div class="form-row">
+                    <label for="desc">Grade</label>
+                    <select id="desc" style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background:var(--glass); color:inherit; font-size:14px;">
+                        <option value="">Select a grade...</option>
+                        <optgroup label="PSA"></optgroup>
+                            <option value="PSA 10">PSA 10 - Gem Mint</option>
+                            <option value="PSA 9">PSA 9 - Mint</option>
+                            <option value="PSA 8">PSA 8 - Near Mint-Mint</option>
+                            <option value="PSA 7">PSA 7 - Near Mint</option>
+                            <option value="PSA 6">PSA 6 - Excellent-Near Mint</option>
+                            <option value="PSA 5">PSA 5 - Excellent</option>
+                        </optgroup>
+                        <optgroup label="ACE">
+                            <option value="ACE 10">ACE 10 - Gem Mint</option>
+                            <option value="ACE 9">ACE 9 - Mint</option>
+                            <option value="ACE 8">ACE 8 - Near Mint-Mint</option>
+                            <option value="ACE 7">ACE 7 - Near Mint</option>
+                        </optgroup>
+                        <optgroup label="Beckett">
+                            <option value="BGS 10">BGS 10 - Pristine</option>
+                            <option value="BGS 9.5">BGS 9.5 - Gem Mint</option>
+                            <option value="BGS 9">BGS 9 - Mint</option>
+                            <option value="BGS 8.5">BGS 8.5 - Near Mint-Mint+</option>
+                            <option value="BGS 8">BGS 8 - Near Mint-Mint</option>
+                        </optgroup>
+                        <option value="Ungraded">Ungraded</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <label for="desc">Language</label>
+                    <select id="desc" style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background:var(--glass); color:inherit; font-size:14px;">
+                        <option value="Select a language...">Select a language...</option>
+                        <option value="Chinese (Simplified)">Chinese (Simplified)</option>
+                        <option value="Chinese (Traditional)">Chinese (Traditional)</option>
+                        <option value="English">English</option>
+                        <option value="French">French</option>
+                        <option value="German">German</option>
+                        <option value="Italian">Italian</option>
+                        <option value="Japanese">Japanese</option>
+                        <option value="Korean">Korean</option>
+                        <option value="Portuguese">Portuguese</option>
+                        <option value="Spanish">Spanish</option>
+                    </select>
+                </div>
+
+
+                <div class="form-row row">
+                    <div style="flex:1">
+                        <label for="price">Price (GBP)</label>
+                        <input id="price" class="price-field" type="number" min="0" step="0.01" placeholder="0.00" />
+                    </div>
+                    <div style="width:110px; display:flex; align-items:flex-end; justify-content:flex-end">
+                        <button id="postBtn" class="btn" style="width:100%">Post</button>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <label>Image</label>
+                    <div id="uploader" class="uploader" tabindex="0">
+                        <div>Click or drop an image here (jpg, png). Max 5 MB.</div>
+                        <input id="file" type="file" accept="image/*" style="display:none" />
+                        <div class="hint">You can add multiple images; first image will be shown on card.</div>
+                    </div>
+                    <div class="thumbs" id="thumbs" aria-live="polite"></div>
+                </div>
+
+                <div style="display:flex; gap:8px; margin-top:10px;">
+                    <button id="clearAll" class="btn ghost">Clear All Cards</button>
+                    <button id="resetForm" class="btn ghost" style="margin-left:auto">Clear Form</button>
+                </div>
+            </div>
+
+            <!-- Gallery panel -->
+            <div>
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px;">
+                    <h2 style="margin:0 0 6px 0;">Your Cards</h2>
+                    <div id="savedInfo" style="color:var(--muted); font-size:13px;">Saved locally • Mobile + Desktop</div>
+                </div>
+
+                <div id="gallery" class="gallery" aria-live="polite">
+                    <div class="empty" id="emptyState">No cards yet. Use the form to post a card.</div>
+                </div>
+
+                <footer>
+                    Tip: Images and cards are saved to your browser's localStorage. Clear them with "Clear All Cards".
+                </footer>
+            </div>
+        </div>
     </div>
-    <footer>
-      &copy; 2025 Product Manager
-    </footer>
-  </div>
 
-  <script>
-    function detectDevice() {
-      const ua = navigator.userAgent;
-      const isMobile = /Android|iPhone|iPad|iPod|Windows Phone/i.test(ua);
-      document.body.classList.toggle('is-mobile', isMobile);
-      document.body.classList.toggle('is-desktop', !isMobile);
-    }
+    <script>
+        // Simple client-only card posting app. Saves to localStorage.
+        const maxFileSize = 5 * 1024 * 1024; // 5MB
+        const fileInput = document.getElementById('file');
+        const uploader = document.getElementById('uploader');
+        const thumbs = document.getElementById('thumbs');
+        const postBtn = document.getElementById('postBtn');
+        const titleInput = document.getElementById('title');
+        const descInput = document.getElementById('desc');
+        const priceInput = document.getElementById('price');
+        const gallery = document.getElementById('gallery');
+        const emptyState = document.getElementById('emptyState');
+        const clearAllBtn = document.getElementById('clearAll');
+        const resetFormBtn = document.getElementById('resetForm');
 
-    let __detectTimer;
-    detectDevice();
-    window.addEventListener('resize', ()=>{ 
-      clearTimeout(__detectTimer); 
-      __detectTimer = setTimeout(detectDevice, 150); 
-    });
-    window.addEventListener('orientationchange', detectDevice);
-  </script>
+        let stagedFiles = []; // [{name, dataUrl}]
+
+        // Utilities
+        function saveCards(cards){
+            localStorage.setItem('cards_v1', JSON.stringify(cards));
+        }
+        function loadCards(){
+            try{
+                const s = localStorage.getItem('cards_v1');
+                return s ? JSON.parse(s) : [];
+            }catch(e){ return []; }
+        }
+
+        // UI: thumbs
+        function renderThumbs(){
+            thumbs.innerHTML = '';
+            stagedFiles.forEach((f, i) => {
+                const div = document.createElement('div');
+                div.className = 'thumb';
+                div.innerHTML = `<img src="${f.dataUrl}" alt="${escapeHtml(f.name)}" /> <button title="Remove">✕</button>`;
+                div.querySelector('button').addEventListener('click', ()=> {
+                    stagedFiles.splice(i,1);
+                    renderThumbs();
+                });
+                thumbs.appendChild(div);
+            });
+        }
+
+        // Render gallery
+        function renderGallery(){
+            const cards = loadCards();
+            gallery.innerHTML = '';
+            if(!cards.length){
+                gallery.appendChild(emptyState);
+                return;
+            }
+            cards.forEach((c, idx) => {
+                const el = document.createElement('div');
+                el.className = 'card';
+                const imgSrc = c.images && c.images.length ? c.images[0] : '';
+                el.innerHTML = `
+                    <div class="card-media">${ imgSrc ? `<img src="${imgSrc}" alt="${escapeHtml(c.title)}">` : '<div style="color:var(--muted);font-size:13px">No image</div>' }</div>
+                    <div class="card-body">
+                        <h3 class="card-title">${escapeHtml(c.title||'Untitled')}</h3>
+                        <p class="card-desc">${escapeHtml(c.description||'')}</p>
+                    </div>
+                    <div class="card-footer">
+                        <div class="price">${new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(Number(c.price || 0))}</div>
+                        <div class="controls">
+                            <button class="small-btn" data-edit="${idx}">Edit</button>
+                            <button class="small-btn" data-delete="${idx}">Delete</button>
+                        </div>
+                    </div>`;
+                gallery.appendChild(el);
+            });
+            // attach listeners for edit/delete
+            gallery.querySelectorAll('[data-delete]').forEach(btn=>{
+                btn.addEventListener('click', e=>{
+                    const i = Number(btn.dataset.delete);
+                    const cards = loadCards();
+                    cards.splice(i,1);
+                    saveCards(cards);
+                    renderGallery();
+                });
+            });
+            gallery.querySelectorAll('[data-edit]').forEach(btn=>{
+                btn.addEventListener('click', e=>{
+                    const i = Number(btn.dataset.edit);
+                    const cards = loadCards();
+                    const c = cards[i];
+                    // populate form for editing (simple overwrite on post)
+                    titleInput.value = c.title;
+                    descInput.value = c.description;
+                    priceInput.value = c.price;
+                    stagedFiles = (c.images||[]).map((d, idx)=>({name:`image-${idx}`, dataUrl:d}));
+                    renderThumbs();
+                    window.scrollTo({top:0, behavior:'smooth'});
+                    // remove the card being edited so that posting creates new or overwritten card
+                    cards.splice(i,1);
+                    saveCards(cards);
+                    renderGallery();
+                });
+            });
+        }
+
+        // file handling
+        uploader.addEventListener('click', ()=> fileInput.click());
+        fileInput.addEventListener('change', (e)=> handleFiles(e.target.files));
+        // drag/drop
+        ['dragenter','dragover'].forEach(evt=>{
+            uploader.addEventListener(evt, (e)=> { e.preventDefault(); uploader.classList.add('dragging'); });
+        });
+        ['dragleave','drop'].forEach(evt=>{
+            uploader.addEventListener(evt, (e)=> { e.preventDefault(); uploader.classList.remove('dragging'); });
+        });
+        uploader.addEventListener('drop', (e)=>{
+            const dt = e.dataTransfer;
+            if(dt && dt.files) handleFiles(dt.files);
+        });
+
+        function handleFiles(files){
+            const arr = Array.from(files).slice(0,6);
+            arr.forEach(file => {
+                if(!file.type.startsWith('image/')) return;
+                if(file.size > maxFileSize){ alert(`'${file.name}' is too large. Max 5MB.`); return; }
+                const reader = new FileReader();
+                reader.onload = (ev)=>{
+                    stagedFiles.push({name:file.name, dataUrl:ev.target.result});
+                    renderThumbs();
+                };
+                reader.readAsDataURL(file);
+            });
+            fileInput.value = '';
+        }
+
+        // Post button
+        postBtn.addEventListener('click', ()=>{
+            const title = titleInput.value.trim();
+            const desc = descInput.value.trim();
+            const price = parseFloat(priceInput.value || 0);
+            if(!title){ alert('Please enter a title.'); return; }
+            if(stagedFiles.length === 0){ if(!confirm('Post without images?')) return; }
+            const images = stagedFiles.map(f => f.dataUrl);
+            const cards = loadCards();
+            cards.unshift({id: Date.now(), title, description: desc, price: price>=0 ? price : 0, images, created: new Date().toISOString()});
+            saveCards(cards);
+            resetForm();
+            renderGallery();
+        });
+
+        resetFormBtn.addEventListener('click', resetForm);
+
+        function resetForm(){
+            titleInput.value = '';
+            descInput.value = '';
+            priceInput.value = '';
+            stagedFiles = [];
+            renderThumbs();
+        }
+
+        clearAllBtn.addEventListener('click', ()=>{
+            if(confirm('Clear all cards from local storage?')) {
+                localStorage.removeItem('cards_v1');
+                renderGallery();
+            }
+        });
+
+        // small helper escape
+        function escapeHtml(s){
+            if(!s) return '';
+            return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
+        }
+
+        // init
+        renderGallery();
+
+        // Device detection: sets data-device on <html> and .is-mobile/.is-desktop on <body>,
+        // and updates the saved-info label. Uses userAgentData when available, falls back to UA+screen.
+        function detectDevice(){
+            let device = 'desktop';
+            try{
+                if(navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean'){
+                    device = navigator.userAgentData.mobile ? 'mobile' : 'desktop';
+                } else {
+                    const ua = navigator.userAgent || '';
+                    const isMobileUa = /Mobi|Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(ua);
+                    const smallScreen = Math.max(screen.width||0, screen.height||0) <= 820;
+                    device = (isMobileUa || smallScreen) ? 'mobile' : 'desktop';
+                }
+            }catch(e){
+                device = 'desktop';
+            }
+            document.documentElement.setAttribute('data-device', device);
+            document.body.classList.toggle('is-mobile', device === 'mobile');
+            document.body.classList.toggle('is-desktop', device === 'desktop');
+            const savedInfo = document.getElementById('savedInfo');
+            if(savedInfo){
+                savedInfo.textContent = `Saved locally • Detected: ${device.charAt(0).toUpperCase()+device.slice(1)}`;
+            }
+        }
+
+        // run on load and on resize/orientation changes (light debounce)
+        detectDevice();
+        let __detectTimer = 0;
+        window.addEventListener('resize', ()=>{ clearTimeout(__detectTimer); __detectTimer = setTimeout(detectDevice, 150); });
+        window.addEventListener('orientationchange', detectDevice);
+
+        // keyboard accessibility: allow Enter to open file input on uploader when focused
+        uploader.addEventListener('keydown', (e)=>{
+            if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
+        });
+
+        // simple image size optimization: downscale very large images before storing to reduce localStorage bloat.
+        // Note: localStorage size is limited. This helper reduces dimensions to max 1600px.
+        (function monkeyPatchStagedReads(){
+            // when images are added through FileReader we could downscale — implement by replacing last stagedFiles with scaled image.
+            // Replace handleFiles to scale:
+            const originalHandle = handleFiles;
+            handleFiles = function(files){
+                const arr = Array.from(files).slice(0,6);
+                arr.forEach(file => {
+                    if(!file.type.startsWith('image/')) return;
+                    if(file.size > maxFileSize){ alert(`'${file.name}' is too large. Max 5MB.`); return; }
+                    const reader = new FileReader();
+                    reader.onload = (ev)=>{
+                        const img = new Image();
+                        img.onload = ()=>{
+                            const maxDim = 1600;
+                            let w = img.width, h = img.height;
+                            if(Math.max(w,h) > maxDim){
+                                const ratio = maxDim / Math.max(w,h);
+                                w = Math.round(w * ratio); h = Math.round(h * ratio);
+                            }
+                            const canvas = document.createElement('canvas');
+                            canvas.width = w; canvas.height = h;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img,0,0,w,h);
+                            // export as jpeg with 0.85 quality for smaller size
+                            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                            stagedFiles.push({name:file.name, dataUrl});
+                            renderThumbs();
+                        };
+                        img.src = ev.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+                fileInput.value = '';
+            };
+            // assign the overridden handleFiles back to listeners
+            fileInput.removeEventListener('change', ()=>{}); // noop but safe
+            fileInput.addEventListener('change', (e)=> handleFiles(e.target.files));
+        })();
+    </script>
 </body>
 </html>
