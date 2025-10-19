@@ -297,7 +297,7 @@
             <div>
                 <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px;">
                     <h2 style="margin:0 0 6px 0;">Your Cards</h2>
-                    <div style="color:var(--muted); font-size:13px;">Saved locally • Mobile + Desktop</div>
+                    <div id="savedInfo" style="color:var(--muted); font-size:13px;">Saved locally • Mobile + Desktop</div>
                 </div>
 
                 <div id="gallery" class="gallery" aria-live="polite">
@@ -481,6 +481,37 @@
 
         // init
         renderGallery();
+
+        // Device detection: sets data-device on <html> and .is-mobile/.is-desktop on <body>,
+        // and updates the saved-info label. Uses userAgentData when available, falls back to UA+screen.
+        function detectDevice(){
+            let device = 'desktop';
+            try{
+                if(navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean'){
+                    device = navigator.userAgentData.mobile ? 'mobile' : 'desktop';
+                } else {
+                    const ua = navigator.userAgent || '';
+                    const isMobileUa = /Mobi|Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(ua);
+                    const smallScreen = Math.max(screen.width||0, screen.height||0) <= 820;
+                    device = (isMobileUa || smallScreen) ? 'mobile' : 'desktop';
+                }
+            }catch(e){
+                device = 'desktop';
+            }
+            document.documentElement.setAttribute('data-device', device);
+            document.body.classList.toggle('is-mobile', device === 'mobile');
+            document.body.classList.toggle('is-desktop', device === 'desktop');
+            const savedInfo = document.getElementById('savedInfo');
+            if(savedInfo){
+                savedInfo.textContent = `Saved locally • Detected: ${device.charAt(0).toUpperCase()+device.slice(1)}`;
+            }
+        }
+
+        // run on load and on resize/orientation changes (light debounce)
+        detectDevice();
+        let __detectTimer = 0;
+        window.addEventListener('resize', ()=>{ clearTimeout(__detectTimer); __detectTimer = setTimeout(detectDevice, 150); });
+        window.addEventListener('orientationchange', detectDevice);
 
         // keyboard accessibility: allow Enter to open file input on uploader when focused
         uploader.addEventListener('keydown', (e)=>{
