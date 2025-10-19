@@ -37,6 +37,10 @@
                 display:grid;
                 grid-template-columns:360px 1fr;
                 gap:var(--gap);
+                /* prevent the gallery column from stretching too wide on large desktop screens */
+                grid-template-columns: 360px minmax(560px, 1fr);
+                max-width: calc(var(--max-width) + 40px);
+                margin: 0 auto;
                 min-height:0; /* allow children to use overflow */
             }
             /* allow left panel to scroll if form is long */
