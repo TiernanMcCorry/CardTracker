@@ -29,25 +29,22 @@
                 box-sizing:border-box;
                 display:flex;
                 flex-direction:column;
-                height:calc(100vh - 56px); /* 56px is approx. top/bottom margin/header; still adaptive */
+                height:calc(100vh - 56px);
                 min-height:0;
             }
 
             .layout{
-                /* fill remaining space under the header */
                 flex:1;
                 display:grid;
                 gap:var(--gap);
-                /* desktop two-column layout: left panel fixed, right column flexible */
                 grid-template-columns: 360px minmax(560px, 1fr);
                 max-width: calc(var(--max-width) + 40px);
                 margin: 0 auto;
-                min-height:0; /* allow children to use overflow */
-                height: calc(100vh - 100px); /* desktop gallery height */
+                min-height:0;
+                height: calc(100vh - 100px);
                 overflow: auto;
             }
 
-            /* allow left panel to scroll if form is long (desktop override) */
             .panel{
                 overflow:auto;
                 max-height:100%;
@@ -55,13 +52,11 @@
                 position:relative;
             }
 
-            /* make gallery column scrollable independently */
             #gallery{
                 overflow:auto;
                 min-height:0;
             }
 
-            /* ensure empty state doesn't force extra height */
             .empty{margin:0;}
         }
         /* form panel */
@@ -121,27 +116,6 @@
         <div class="layout">
             <!-- Form panel -->
             <div class="panel" id="formPanel" aria-labelledby="post-card">
-                <h2 style</optgroup>="margin:0 0 8px 0;">Post a Card</h2>
-
-                <div class="form-row">
-                    <label for="title">Title</label>
-                    <input id="title" type="text" placeholder="Name (e.g. Pikachu)" />
-                </div>
-
-
-<body>
-    <div class="wrap">
-        <header>
-            <div style="width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#00214a,#003c6a);display:flex;align-items:center;justify-content:center;font-weight:700">SQ</div>
-            <div>
-                <h1>Card Tracker</h1>
-                <p>Post your cards with image and price. Works on mobile & desktop. Data saved locally.</p>
-            </div>
-        </header>
-
-        <div class="layout">
-            <!-- Form panel -->
-            <div class="panel" id="formPanel" aria-labelledby="post-card">
                 <h2 style="margin:0 0 8px 0;">Post a Card</h2>
 
                 <div class="form-row">
@@ -175,7 +149,7 @@
                             <option value="Aquapolis">Aquapolis</option>
                             <option value="Skyridge">Skyridge</option>
                         </optgroup>
-                        <optgroup label="EX Series"></optgroup>
+                        <optgroup label="EX Series">
                             <option value="EX Ruby & Sapphire">EX Ruby & Sapphire</option>
                             <option value="EX Sandstorm">EX Sandstorm</option>
                             <option value="EX Dragon">EX Dragon</option>
@@ -193,7 +167,7 @@
                             <option value="EX Dragon Frontiers">EX Dragon Frontiers</option>
                             <option value="EX Power Keepers">EX Power Keepers</option>
                         </optgroup>
-                        <optgroup label="Diamond & Pearl Series"></optgroup>
+                        <optgroup label="Diamond & Pearl Series">
                             <option value="Diamond & Pearl">Diamond & Pearl</option>
                             <option value="Mysterious Treasures">Mysterious Treasures</option>
                             <option value="Secret Wonders">Secret Wonders</option>
@@ -208,7 +182,7 @@
                             <option value="Supreme Victors">Supreme Victors</option>
                             <option value="Arceus">Arceus</option>
                         </optgroup>
-                        <optgroup label="HeartGold & SoulSilver Series"></optgroup>
+                        <optgroup label="HeartGold & SoulSilver Series">
                             <option value="HeartGold & SoulSilver">HeartGold & SoulSilver</option>
                             <option value="HS—Unleashed">HS—Unleashed</option>
                             <option value="HS—Undaunted">HS—Undaunted</option>
@@ -286,12 +260,13 @@
                             <option value="Temporal Forces">Temporal Forces</option>
                         </optgroup>
                     </select>
+                </div>
 
                 <div class="form-row">
-                    <label for="desc">Grade</label>
-                    <select id="desc" style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background:var(--glass); color:inherit; font-size:14px;">
+                    <label for="grade">Grade</label>
+                    <select id="grade" style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background:var(--glass); color:inherit; font-size:14px;">
                         <option value="">Select a grade...</option>
-                        <optgroup label="PSA"></optgroup>
+                        <optgroup label="PSA">
                             <option value="PSA 10">PSA 10 - Gem Mint</option>
                             <option value="PSA 9">PSA 9 - Mint</option>
                             <option value="PSA 8">PSA 8 - Near Mint-Mint</option>
@@ -318,9 +293,9 @@
                 </div>
 
                 <div class="form-row">
-                    <label for="desc">Language</label>
-                    <select id="desc" style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background:var(--glass); color:inherit; font-size:14px;">
-                        <option value="Select a language...">Select a language...</option>
+                    <label for="language">Language</label>
+                    <select id="language" style="width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background:var(--glass); color:inherit; font-size:14px;">
+                        <option value="">Select a language...</option>
                         <option value="Chinese (Simplified)">Chinese (Simplified)</option>
                         <option value="Chinese (Traditional)">Chinese (Traditional)</option>
                         <option value="English">English</option>
@@ -333,7 +308,6 @@
                         <option value="Spanish">Spanish</option>
                     </select>
                 </div>
-
 
                 <div class="form-row row">
                     <div style="flex:1">
@@ -387,7 +361,7 @@
         const thumbs = document.getElementById('thumbs');
         const postBtn = document.getElementById('postBtn');
         const titleInput = document.getElementById('title');
-        const descInput = document.getElementById('desc');
+        const descInput = document.getElementById('desc'); // remains as the primary description/set field
         const priceInput = document.getElementById('price');
         const gallery = document.getElementById('gallery');
         const emptyState = document.getElementById('emptyState');
