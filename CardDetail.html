@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Card Detail</title>
+<style>
+    :root{ --bg:#071429; --muted:#9aa7bd; --card:#0b1220; --accent:#06f; font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; }
+    html,body{height:100%; margin:0; background:linear-gradient(180deg,#071026 0%, #071429 100%); color:#e6eef8;}
+    .wrap{max-width:1100px;margin:20px auto;padding:20px;}
+    .top{display:flex;align-items:center;gap:12px;margin-bottom:18px;}
+    .back{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:8px 12px;border-radius:8px;cursor:pointer;}
+    .detail{display:grid;grid-template-columns: 1fr 420px; gap:18px;}
+    @media(max-width:880px){ .detail{grid-template-columns:1fr;}}
+    .media{background:var(--card);border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;height:70vh;min-height:320px;}
+    .media img{max-width:100%; max-height:100%; object-fit:contain; display:block; cursor:pointer;}
+    .info{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:16px;border-radius:12px;}
+    h1{margin:0 0 8px 0;}
+    .muted{color:var(--muted); font-size:14px;}
+    .price{font-weight:800;font-size:20px;margin-top:8px;}
+    .controls{display:flex;gap:8px;margin-top:12px;}
+    .btn{background:linear-gradient(90deg,var(--accent),#3aa7ff);color:#001;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;}
+    .btn.ghost{background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.06);}
+    /* image overlay */
+    .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.9);z-index:60;}
+    .overlay.visible{display:flex;}
+    .overlay img{max-width:95%;max-height:95%;object-fit:contain;}
+</style>
+</head>
+<body>
+<div class="wrap">
+    <div class="top">
+        <button id="backBtn" class="back">← Back</button>
+        <div>
+            <div style="width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#00214a,#003c6a);display:flex;align-items:center;justify-content:center;font-weight:700">SQ</div>
+        </div>
+        <div style="margin-left:8px">
+            <div style="font-weight:700">Card Detail</div>
+            <div class="muted" id="savedInfo">Saved locally</div>
+        </div>
+    </div>
+
+    <div class="detail" id="detailArea">
+        <div class="media" id="mediaArea">
+            <div class="muted">Loading…</div>
+        </div>
+        <div class="info" id="infoArea">
+            <h1 id="title">—</h1>
+            <div class="muted" id="set">—</div>
+            <div class="muted" id="grade">—</div>
+            <div class="muted" id="language">—</div>
+            <div class="price" id="price">—</div>
+            <div class="muted" id="created" style="margin-top:8px"></div>
+            <div class="controls">
+                <button id="deleteBtn" class="btn ghost">Delete</button>
+                <a id="openImage" class="btn" style="text-decoration:none;">Open Image</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="overlay" class="overlay" aria-hidden="true"><img id="overlayImg" src="" alt="Expanded image"></div>
+
+<script>
+    function qs(name){ const u = new URL(location.href); return u.searchParams.get(name); }
+    function loadCards(){ try{ const s = localStorage.getItem('cards_v1'); return s ? JSON.parse(s) : []; }catch(e){ return []; } }
+    function saveCards(c){ localStorage.setItem('cards_v1', JSON.stringify(c)); }
+
+    const id = qs('id');
+    const mediaArea = document.getElementById('mediaArea');
+    const infoArea = document.getElementById('infoArea');
+    const titleEl = document.getElementById('title');
+    const setEl = document.getElementById('set');
+    const gradeEl = document.getElementById('grade');
+    const languageEl = document.getElementById('language');
+    const priceEl = document.getElementById('price');
+    const createdEl = document.getElementById('created');
+    const deleteBtn = document.getElementById('deleteBtn');
+    const backBtn = document.getElementById('backBtn');
+    const openImage = document.getElementById('openImage');
+    const overlay = document.getElementById('overlay');
+    const overlayImg = document.getElementById('overlayImg');
+
+    function findCardById(list, idVal){
+        return list.find(i => String(i.id) === String(idVal));
+    }
+
+    function render(){
+        const cards = loadCards();
+        const card = findCardById(cards, id);
+        if(!card){
+            mediaArea.innerHTML = '<div class="muted">Card not found.</div>';
+            infoArea.querySelectorAll('*').forEach(el=>{ if(el.id){ /* keep */ }});
+            titleEl.textContent = 'Card not found';
+            setEl.textContent = '';
+            priceEl.textContent = '';
+            return;
+        }
+        const imgSrc = (card.images && card.images.length) ? card.images[0] : '';
+        mediaArea.innerHTML = imgSrc ? `<img id="mainImg" src="${imgSrc}" alt="${escapeHtml(card.title)}">` : '<div class="muted">No image</div>';
+        titleEl.textContent = card.title || 'Untitled';
+        setEl.textContent = card.description || '';
+        gradeEl.textContent = card.grade ? ('Grade: ' + card.grade) : '';
+        languageEl.textContent = card.language ? ('Language: ' + card.language) : '';
+        priceEl.textContent = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(Number(card.price || 0));
+        createdEl.textContent = card.created ? ('Posted: ' + new Date(card.created).toLocaleString()) : '';
+        openImage.href = imgSrc || '#';
+        openImage.target = '_blank';
+        // attach handlers
+        const mainImg = document.getElementById('mainImg');
+        if(mainImg){
+            mainImg.addEventListener('click', ()=> {
+                overlayImg.src = mainImg.src;
+                overlay.classList.add('visible');
+                overlay.setAttribute('aria-hidden','false');
+            });
+        }
+        openImage.addEventListener('click', (e)=>{ if(!imgSrc) e.preventDefault(); });
+        deleteBtn.onclick = function(){
+            if(!confirm('Delete this card?')) return;
+            const idx = cards.findIndex(c=>String(c.id)===String(card.id));
+            if(idx>=0){ cards.splice(idx,1); saveCards(cards); location.href = 'PokemonPilot.html'; }
+        };
+    }
+
+    backBtn.addEventListener('click', ()=> location.href = 'PokemonPilot.html');
+
+    overlay.addEventListener('click', ()=> {
+        overlay.classList.remove('visible');
+        overlay.setAttribute('aria-hidden','true');
+        overlayImg.src = '';
+    });
+
+    function escapeHtml(s){ if(!s) return ''; return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'); }
+
+    render();
+</script>
+</body>
+</html>

@@ -91,6 +91,9 @@
         .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:12px; overflow:hidden; box-shadow: 0 8px 28px rgba(2,6,23,0.6); display:flex; flex-direction:column;}
         .card-media{height:160px; background:#071427; display:flex; align-items:center; justify-content:center; overflow:hidden;}
         .card-media img{width:100%; height:100%; object-fit:cover; display:block;}
+        /* make the media area clickable and fill the block */
+        .card-media a{display:block; width:100%; height:100%;}
+        .card-media a img{display:block; width:100%; height:100%;}
         .card-body{padding:12px;}
         .card-title{font-weight:700; font-size:15px; margin:0 0 6px 0;}
         .card-desc{font-size:13px; color:var(--muted); margin:0 0 10px 0; min-height:36px;}
@@ -398,60 +401,62 @@
 
         // Render gallery
         function renderGallery(){
-            const cards = loadCards();
-            gallery.innerHTML = '';
-            if(!cards.length){
-                gallery.appendChild(emptyState);
-                return;
-            }
-            cards.forEach((c, idx) => {
-                const el = document.createElement('div');
-                el.className = 'card';
-                const imgSrc = c.images && c.images.length ? c.images[0] : '';
-                el.innerHTML = `
-                    <div class="card-media">${ imgSrc ? `<img src="${imgSrc}" alt="${escapeHtml(c.title)}">` : '<div style="color:var(--muted);font-size:13px">No image</div>' }</div>
-                    <div class="card-body">
-                        <h3 class="card-title">${escapeHtml(c.title||'Untitled')}</h3>
-                        <p class="card-desc">${escapeHtml(c.description||'')}</p>
-                    </div>
-                    <div class="card-footer">
-                        <div class="price">${new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(Number(c.price || 0))}</div>
-                        <div class="controls">
-                            <button class="small-btn" data-edit="${idx}">Edit</button>
-                            <button class="small-btn" data-delete="${idx}">Delete</button>
-                        </div>
-                    </div>`;
-                gallery.appendChild(el);
-            });
-            // attach listeners for edit/delete
-            gallery.querySelectorAll('[data-delete]').forEach(btn=>{
-                btn.addEventListener('click', e=>{
-                    const i = Number(btn.dataset.delete);
-                    const cards = loadCards();
-                    cards.splice(i,1);
-                    saveCards(cards);
-                    renderGallery();
-                });
-            });
-            gallery.querySelectorAll('[data-edit]').forEach(btn=>{
-                btn.addEventListener('click', e=>{
-                    const i = Number(btn.dataset.edit);
-                    const cards = loadCards();
-                    const c = cards[i];
-                    // populate form for editing (simple overwrite on post)
-                    titleInput.value = c.title;
-                    descInput.value = c.description;
-                    priceInput.value = c.price;
-                    stagedFiles = (c.images||[]).map((d, idx)=>({name:`image-${idx}`, dataUrl:d}));
-                    renderThumbs();
-                    window.scrollTo({top:0, behavior:'smooth'});
-                    // remove the card being edited so that posting creates new or overwritten card
-                    cards.splice(i,1);
-                    saveCards(cards);
-                    renderGallery();
-                });
-            });
-        }
+             const cards = loadCards();
+             gallery.innerHTML = '';
+             if(!cards.length){
+                 gallery.appendChild(emptyState);
+                 return;
+             }
+             cards.forEach((c, idx) => {
+                 const el = document.createElement('div');
+                 el.className = 'card';
+                 const imgSrc = c.images && c.images.length ? c.images[0] : '';
+                 // Link card media to detail page using card id
+                 const detailUrl = `CardDetail.html?id=${encodeURIComponent(c.id)}`;
+                 el.innerHTML = `
+                     <div class="card-media">${ imgSrc ? `<a href="${detailUrl}"><img src="${imgSrc}" alt="${escapeHtml(c.title)}"></a>` : `<a href="${detailUrl}"><div style="color:var(--muted);font-size:13px;height:100%;display:flex;align-items:center;justify-content:center">No image</div></a>` }</div>
+                     <div class="card-body">
+                         <h3 class="card-title">${escapeHtml(c.title||'Untitled')}</h3>
+                         <p class="card-desc">${escapeHtml(c.description||'')}</p>
+                     </div>
+                     <div class="card-footer">
+                         <div class="price">${new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(Number(c.price || 0))}</div>
+                         <div class="controls">
+                             <button class="small-btn" data-edit="${idx}">Edit</button>
+                             <button class="small-btn" data-delete="${idx}">Delete</button>
+                         </div>
+                     </div>`;
+                 gallery.appendChild(el);
+             });
+             // attach listeners for edit/delete
+             gallery.querySelectorAll('[data-delete]').forEach(btn=>{
+                 btn.addEventListener('click', e=>{
+                     const i = Number(btn.dataset.delete);
+                     const cards = loadCards();
+                     cards.splice(i,1);
+                     saveCards(cards);
+                     renderGallery();
+                 });
+             });
+             gallery.querySelectorAll('[data-edit]').forEach(btn=>{
+                 btn.addEventListener('click', e=>{
+                     const i = Number(btn.dataset.edit);
+                     const cards = loadCards();
+                     const c = cards[i];
+                     // populate form for editing (simple overwrite on post)
+                     titleInput.value = c.title;
+                     descInput.value = c.description;
+                     priceInput.value = c.price;
+                     stagedFiles = (c.images||[]).map((d, idx)=>({name:`image-${idx}`, dataUrl:d}));
+                     renderThumbs();
+                     window.scrollTo({top:0, behavior:'smooth'});
+                     // remove the card being edited so that posting creates new or overwritten card
+                     cards.splice(i,1);
+                     saveCards(cards);
+                     renderGallery();
+                 });
+             });
+         }
 
         // file handling
         uploader.addEventListener('click', ()=> fileInput.click());
